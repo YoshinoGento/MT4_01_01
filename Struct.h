@@ -72,3 +72,7 @@ struct Triangle {
 	Vector3 vertex[3]; //!< 頂点の配列
 };
 
+// Add this operator overload to enable negation of Vector3
+inline Vector3 operator-(const Vector3& v) {
+    return { -v.x, -v.y, -v.z };
+}

@@ -410,7 +410,7 @@ void MatrixMath::DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4
 	}
 }
 
-Matrix4x4 MatrixMath::MakeIdentity() {
+Matrix4x4 MatrixMath::MakeIdentity4x4() {
 	Matrix4x4 result{};
 
 	for (int i = 0; i < 4; ++i) {
@@ -499,6 +499,40 @@ Matrix4x4 MatrixMath::MakeRotateAxisMatrix(const Vector3& axis, float angle) {
 }
 
 
+//方向回転
+Matrix4x4 MatrixMath::DirectionToDirection(const Vector3& from, const Vector3& to) {
+	// 正規化
+	Vector3 f = Normalize(from);
+	Vector3 t = Normalize(to);
+
+	float cosTheta = Dot(f, t);
+
+	// 同じ方向（角度0°）
+	if (cosTheta > 0.9999f) {
+		return MakeIdentity4x4();
+	}
+
+	// 逆方向（180°回転）
+	if (cosTheta < -0.9999f) {
+		// from と垂直なベクトルを適当に作る
+		Vector3 axis = Cross(f, Vector3{ 1.0f, 0.0f, 0.0f });
+		if (Length(axis) < 0.0001f) {
+			axis = Cross(f, Vector3{ 0.0f, 1.0f, 0.0f });
+		}
+		axis = Normalize(axis);
+		return MakeRotateAxisMatrix(axis, std::numbers::pi_v<float>);
+	}
+
+	// 回転軸 = f × t
+	Vector3 axis = Normalize(Cross(f, t));
+	// 角度 = arccos(f・t)
+	float angle = std::acos(std::clamp(cosTheta, -1.0f, 1.0f));
+
+	// 任意軸回転行列を生成
+	return MakeRotateAxisMatrix(axis, angle);
+}
+
+
 
 
 Vector3 MatrixMath::ClosestPoint(const Vector3& point, const Segment& segment) {
@@ -537,54 +571,61 @@ Vector3 MatrixMath::ClosestPoint(const Vector3& point, const Segment& segment) {
 }
 
 bool MatrixMath::IsCollisionP(const Segment& segment, const Plane& plane) {
-	// 線分の始点と終点を取得
-	Vector3 start = segment.origin;                  // 線分の始点
-	Vector3 end = Add(segment.origin, segment.diff);     // 線分の終点（始点 + 向きベクトル）
+	// 線分の始点と終点
+	Vector3 start = segment.origin;
+	Vector3 end = Add(segment.origin, segment.diff);
 
-	// 始点と終点から平面までの距離（符号付き）を計算
-	// 平面の方程式: normal・P = distance
-	// ここでは、点と法線の内積 - 平面の距離 で符号付き距離を求めている
-	float startDist = MatrixMath::Dot(start, plane.normal) - plane.distance; // 始点から平面までの距離
-	float endDist = MatrixMath::Dot(end, plane.normal) - plane.distance;   // 終点から平面までの距離
+	// 始点・終点から平面までの符号付き距離
+	float startDist = Dot(start, plane.normal) - plane.distance;
+	float endDist = Dot(end, plane.normal) - plane.distance;
 
-	// 始点と終点が平面の両側にあれば、線分は平面と交差している
-	// 例：d0 < 0 かつ d1 > 0、またはその逆、またはどちらかが0（ちょうど接している）
-	return startDist * endDist <= 0.0f;
-}
-
-
-void MatrixMath::DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-
-	// 平面の中心点（法線ベクトルに距離を掛けたもの）
-	Vector3 center = MultiplyV(plane.distance, plane.normal);
-
-	// 平面に垂直な2つの単位ベクトルを作成（平面上の軸）
-	Vector3 u = MatrixMath::Normalize(MatrixMath::Perpendicular(plane.normal)); // 法線と垂直な任意のベクトル
-	Vector3 v = MatrixMath::Normalize(Cross(plane.normal, u));                // uと法線に垂直なもう一つのベクトル
-
-	float size = 2.0f; // 平面を描画する正方形の一辺の半分の長さ
-
-	// 平面の四隅の座標を計算（正方形の4頂点）
-	Vector3 corners[3] = {
-		Add(center, Add(MultiplyV(size, u), MultiplyV(size, v))),   // +u +v方向の頂点
-		Add(center, Add(MultiplyV(size, u), MultiplyV(-size, v))),  // +u -v方向の頂点
-		Add(center, Add(MultiplyV(-size, u), MultiplyV(-size, v))), // -u -v方向の頂点
-	};
-
-	// 4つの頂点をスクリーン座標に変換して線で繋ぐ
-	// viewProjectionMatrix と viewportMatrix をかけ合わせて変換行列を作成
-	Matrix4x4 transform = MultiplyM(viewProjectionMatrix, viewportMatrix);
-
-	for (int i = 0; i < 3; ++i) {
-		Vector3 screen0 = Transform(corners[i], transform);                 // 頂点iを変換
-		Vector3 screen1 = Transform(corners[(i + 1) % 3], transform);       // 次の頂点を変換
-		Novice::DrawLine(
-			static_cast<int>(screen0.x), static_cast<int>(screen0.y),       // 頂点iのスクリーン座標
-			static_cast<int>(screen1.x), static_cast<int>(screen1.y),       // 頂点i+1のスクリーン座標
-			color                                                           // 線の色
-		);
+	// どちらも同じ側にある（符号が同じ or 両方0）→交差なし
+	if (startDist * endDist > 0.0f) {
+		return false;
 	}
+
+	// 平面上をまたいでいる（片方が正、片方が負）→交差あり
+	// ただし完全に平面上にある場合も交差扱い
+	if (fabsf(startDist - endDist) < 1e-6f) {
+		return false; // ほぼ同じ距離 → 平行
+	}
+
+	return true;
 }
+
+
+//void MatrixMath::DrawPlane(const Plane& plane, const Matrix4x4& vp, const Matrix4x4& viewport, uint32_t color) {
+//
+//	// 平面の中心点（法線ベクトルに距離を掛けたもの）
+//	Vector3 center = MultiplyV(plane.distance, plane.normal);
+//
+//	// 平面に垂直な2つの単位ベクトルを作成（平面上の軸）
+//	Vector3 u = MatrixMath::Normalize(MatrixMath::Perpendicular(plane.normal)); // 法線と垂直な任意のベクトル
+//	Vector3 v = MatrixMath::Normalize(Cross(plane.normal, u));                // uと法線に垂直なもう一つのベクトル
+//
+//	float size = 2.0f; // 平面を描画する正方形の一辺の半分の長さ
+//
+//	// 平面の四隅の座標を計算（正方形の4頂点）
+//	Vector3 corners[3] = {
+//		Add(center, Add(MultiplyV(size, u), MultiplyV(size, v))),   // +u +v方向の頂点
+//		Add(center, Add(MultiplyV(size, u), MultiplyV(-size, v))),  // +u -v方向の頂点
+//		Add(center, Add(MultiplyV(-size, u), MultiplyV(-size, v))), // -u -v方向の頂点
+//	};
+//
+//	// 4つの頂点をスクリーン座標に変換して線で繋ぐ
+//	// viewProjectionMatrix と viewportMatrix をかけ合わせて変換行列を作成
+//	Matrix4x4 transform = MultiplyM(viewProjectionMatrix, viewportMatrix);
+//
+//	for (int i = 0; i < 3; ++i) {
+//		Vector3 screen0 = Transform(corners[i], transform);                 // 頂点iを変換
+//		Vector3 screen1 = Transform(corners[(i + 1) % 3], transform);       // 次の頂点を変換
+//		Novice::DrawLine(
+//			static_cast<int>(screen0.x), static_cast<int>(screen0.y),       // 頂点iのスクリーン座標
+//			static_cast<int>(screen1.x), static_cast<int>(screen1.y),       // 頂点i+1のスクリーン座標
+//			color                                                           // 線の色
+//		);
+//	}
+//}
 
 void MatrixMath::DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
 	Vector3 screenV[3];
