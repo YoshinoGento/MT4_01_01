@@ -52,4 +52,23 @@ namespace MatrixMath {
     bool IsCollisionP(const Segment& segment, const Plane& plane);            // 平面と線分
     bool IsCollisionT(const Triangle& triangle, const Segment& segment);      // 三角形と線分
     Vector3 ClosestPoint(const Vector3& point, const Segment& segment);       // 点と線分の最近接点
+
+
+    //Quaternionの積
+	Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs);
+
+    //単位Quaternionを返す
+    Quaternion IdentityQuaternion();
+
+	//共役Quaternionを返す
+	Quaternion Conjugate(const Quaternion& quaternion);
+
+    //Quaternionのnormを返す
+    float Norm(const Quaternion& quaternion);
+
+	//正規化したQuaternionを返す
+	Quaternion Normalize(const Quaternion& quaternion);
+
+	//逆Quaternionを返す
+	Quaternion Inverse(const Quaternion& quaternion);
 };
