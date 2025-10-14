@@ -49,17 +49,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*int kWindowWidth = 1280;
 	int kWindowHeight = 720;*/
 
+	Vector3 from0 = MatrixMath::Normalize(Vector3{ 1.0f,0.7f,0.5f });
+	Vector3 to0 = -from0;
+	Vector3 from1 = MatrixMath::Normalize(Vector3{ -0.6f,0.9f,0.2f });
+	Vector3 to1 = MatrixMath::Normalize(Vector3{ 0.4f,0.7f,-0.5f });
 	
-	Quaternion q1 = { 2.0f,3.0f,4.0f,1.0f };
-	Quaternion q2 = { 1.0f,3.0f,5.0f,2.0f };
-	Quaternion identity = MatrixMath::IdentityQuaternion();
-	Quaternion conj = MatrixMath::Conjugate(q1);
-	Quaternion inv = MatrixMath::Inverse(q1);
-	Quaternion normal = MatrixMath::Normalize(q1);
-	Quaternion mul1 = MatrixMath::Multiply(q1, q2);
-	Quaternion mul2 = MatrixMath::Multiply(q2, q1);
-	float  norm = MatrixMath::Norm(q1);
-
 
 
 
@@ -77,8 +71,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// 
 
+		Matrix4x4 rotateMatrix0 =
+			MatrixMath::DirectionToDirection(
+				MatrixMath::Normalize(Vector3{ 1.0f,0.0f,0.0f }),
+				MatrixMath::Normalize(Vector3{ -1.0f,0.0f,0.0f })
+			);
 		
-
+		Matrix4x4 rotateMatrix1 =
+			MatrixMath::DirectionToDirection(from0, to0);
+		Matrix4x4 rotateMatrix2 =
+			MatrixMath::DirectionToDirection(from1, to1);
 		///
 		/// ↑更新処理ここまで
 		///
@@ -88,23 +90,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		
 
-	 // ===== 描画処理 =====
-		int x = 50;
-		int y = 60;
-		int step = 25;
+		MatrixScreenPrintf(0, 0, rotateMatrix0, "rotateMatrix0");
+		MatrixScreenPrintf(0, kRowHeight * 5, rotateMatrix1, "rotateMatrix1");
+		MatrixScreenPrintf(0, kRowHeight * 10, rotateMatrix2, "rotateMatrix2");
 
-		Novice::ScreenPrintf(x, y - 30, "Quaternion Calculation Results");
+	 
+		
 
-		QuaternionScreenPrintf(x, y + step * 0, q1, "q1");
-		QuaternionScreenPrintf(x, y + step * 1, q2, "q2");
-		QuaternionScreenPrintf(x, y + step * 2, identity, "Identity");
-		QuaternionScreenPrintf(x, y + step * 3, conj, "Conjugate(q1)");
-		QuaternionScreenPrintf(x, y + step * 4, inv, "Inverse(q1)");
-		QuaternionScreenPrintf(x, y + step * 5, normal, "Normalize(q1)");
-		QuaternionScreenPrintf(x, y + step * 6, mul1, "q1 × q2");
-		QuaternionScreenPrintf(x, y + step * 7, mul2, "q2 × q1");
-
-		Novice::ScreenPrintf(x, y + step * 9, "Norm(q1) : %.02f", norm);
 
 
 		///
