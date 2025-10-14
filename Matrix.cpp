@@ -745,3 +745,45 @@ Vector3 MatrixMath::Perpendicular(const Vector3& vector) {
 //	}
 //	return color;
 //}
+
+Quaternion MatrixMath::Multiply(const Quaternion& lhs, const Quaternion& rhs) {
+	Quaternion result;
+	result.w = lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z;
+	result.x = lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y;
+	result.y = lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x;
+	result.z = lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w;
+	return result;
+}
+
+
+Quaternion MatrixMath::IdentityQuaternion() {
+	return { 0.0f, 0.0f, 0.0f, 1.0f };
+}
+
+
+Quaternion MatrixMath::Conjugate(const Quaternion& q) {
+	return { -q.x, -q.y, -q.z, q.w };
+}
+
+
+float MatrixMath::Norm(const Quaternion& q) {
+	return std::sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+}
+
+
+Quaternion MatrixMath::Normalize(const Quaternion& q) {
+	float norm = Norm(q);
+	if (norm == 0.0f) return { 0.0f, 0.0f, 0.0f, 1.0f };
+	float inv = 1.0f / norm;
+	return { q.x * inv, q.y * inv, q.z * inv, q.w * inv };
+}
+
+
+Quaternion MatrixMath::Inverse(const Quaternion& q) {
+	float normSq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+	if (normSq == 0.0f) return { 0.0f, 0.0f, 0.0f, 1.0f };
+	Quaternion conj = Conjugate(q);
+	float invNorm = 1.0f / normSq;
+	return { conj.x * invNorm, conj.y * invNorm, conj.z * invNorm, conj.w * invNorm };
+}
+

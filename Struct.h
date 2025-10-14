@@ -76,3 +76,10 @@ struct Triangle {
 inline Vector3 operator-(const Vector3& v) {
     return { -v.x, -v.y, -v.z };
 }
+
+struct Quaternion {
+	float x;
+	float y;
+	float z;
+	float w;
+};
