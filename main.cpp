@@ -31,9 +31,12 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& matirix, const char* labe
 }
 
 // クォータニオンの表示関数
-void QuaternionScreenPrintf(int x, int y, const Quaternion& q, const char* label) {
-	Novice::ScreenPrintf(x, y, "%s", label);
-	Novice::ScreenPrintf(x + 120, y, ":  %.02f, %.02f, %.02f, %.02f", q.x, q.y, q.z, q.w);
+void QuaternionScreenPrintf(int x, int y, const Quaternion& q, const char* label, float t) {
+	// ラベル部分（例: Slerp(q0, q1, 0.0f)）
+	Novice::ScreenPrintf(x, y, "%s(t=%.1f)", label, t);
+
+	// 数値部分（少し右にずらす）
+	Novice::ScreenPrintf(x + 250, y, ":  %.02f, %.02f, %.02f, %.02f", q.x, q.y, q.z, q.w);
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -49,11 +52,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	/*int kWindowWidth = 1280;
 	int kWindowHeight = 720;*/
 
-	
-	Quaternion rotation = MatrixMath::MakeRotateAxisAngleQuaternion(
-		MatrixMath::Normalize(Vector3{ 1.0f,0.4f,-0.2f }), 0.45f);
-	Vector3 pointY = { 2.1f,-0.9f,1.3f };
-	
+
+
 
 
 
@@ -72,9 +72,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// 
 
-		Matrix4x4 rotateMatrix = MatrixMath::MakeRotateMatrix(rotation);
-		Vector3 rotateByQuaternion = MatrixMath::RotateVector(pointY, rotation);
-		Vector3 rotateByMatrix = MatrixMath::Transform(pointY, rotateMatrix);
+		Quaternion rotation0 = MatrixMath::MakeRotateAxisAngleQuaternion({ 0.71f, 0.71f, 0.0f }, 0.3f);
+		Quaternion rotation1 = MatrixMath::MakeRotateAxisAngleQuaternion({ 0.71f, 0.0f, 0.71f }, 3.141592f);
+
+		Quaternion interpolate0 = MatrixMath::Slerp(rotation0, rotation1, 0.0f);
+		Quaternion interpolate1 = MatrixMath::Slerp(rotation0, rotation1, 0.3f);
+		Quaternion interpolate2 = MatrixMath::Slerp(rotation0, rotation1, 0.5f);
+		Quaternion interpolate3 = MatrixMath::Slerp(rotation0, rotation1, 0.7f);
+		Quaternion interpolate4 = MatrixMath::Slerp(rotation0, rotation1, 1.0f);
 
 
 		///
@@ -85,11 +90,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		
-		QuaternionScreenPrintf(0, kRowHeight * 0, rotation, "rotation");
-		MatrixScreenPrintf(0, kRowHeight * 1, rotateMatrix, "  rotateMatrix :");
-		VectorScreenPrintf(0, kRowHeight * 7, rotateByQuaternion, ": rotateByQuaternion");
-		VectorScreenPrintf(0, kRowHeight * 8, rotateByMatrix, ": rotateByMatrix");
-	 
+		
+		// クォータニオンの補間結果を表示
+		QuaternionScreenPrintf(0, 100, interpolate0, "Slerp(q0, q1)", 0.0f);
+		QuaternionScreenPrintf(0, 120, interpolate1, "Slerp(q0, q1)", 0.3f);
+		QuaternionScreenPrintf(0, 140, interpolate2, "Slerp(q0, q1)", 0.5f);
+		QuaternionScreenPrintf(0, 160, interpolate3, "Slerp(q0, q1)", 0.7f);
+		QuaternionScreenPrintf(0, 180, interpolate4, "Slerp(q0, q1)", 1.0f);
+
+
 
 
 		///

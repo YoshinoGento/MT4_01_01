@@ -81,6 +81,11 @@ namespace MatrixMath {
 	//Quaternionから回転行列を生成する
     Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
 
+	//球面線形補間(Slerp)
+	Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
+
+
+
 
 
 };

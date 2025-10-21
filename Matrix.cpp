@@ -857,3 +857,52 @@ Matrix4x4 MatrixMath::MakeRotateMatrix(const Quaternion& quaternion) {
 	return result;
 }
 
+Quaternion MatrixMath::Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
+	
+	// q0, q1 は単位クォータニオンを想定（回転を表す）
+	// t ∈ [0,1] の範囲で補間
+
+	// 内積（回転の類似度）
+	float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
+
+	Quaternion q1Copy = q1; // 必要なら反転させる用
+
+	// もし内積が負なら、もう片方の回転を反転して短い経路を取る
+	if (dot < 0.0f) {
+		dot = -dot;
+		q1Copy.x = -q1Copy.x;
+		q1Copy.y = -q1Copy.y;
+		q1Copy.z = -q1Copy.z;
+		q1Copy.w = -q1Copy.w;
+	}
+
+	// ほぼ同じ回転なら線形補間で十分（浮動小数誤差対策）
+	const float EPSILON = 1e-6f;
+	if (dot > 1.0f - EPSILON) {
+		Quaternion result;
+		result.x = q0.x + t * (q1Copy.x - q0.x);
+		result.y = q0.y + t * (q1Copy.y - q0.y);
+		result.z = q0.z + t * (q1Copy.z - q0.z);
+		result.w = q0.w + t * (q1Copy.w - q0.w);
+		return MatrixMath::Normalize(result);
+	}
+
+	// θ = acos(dot)
+	float theta = std::acos(dot);
+	float sinTheta = std::sin(theta);
+
+	// 球面補間係数を計算
+	float scale0 = std::sin((1.0f - t) * theta) / sinTheta;
+	float scale1 = std::sin(t * theta) / sinTheta;
+
+	// 補間して結果を求める
+	Quaternion result;
+	result.x = scale0 * q0.x + scale1 * q1Copy.x;
+	result.y = scale0 * q0.y + scale1 * q1Copy.y;
+	result.z = scale0 * q0.z + scale1 * q1Copy.z;
+	result.w = scale0 * q0.w + scale1 * q1Copy.w;
+
+	// 最後に正規化（念のため）
+	return MatrixMath::Normalize(result);
+}
+
