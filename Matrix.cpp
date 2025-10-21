@@ -787,3 +787,73 @@ Quaternion MatrixMath::Inverse(const Quaternion& q) {
 	return { conj.x * invNorm, conj.y * invNorm, conj.z * invNorm, conj.w * invNorm };
 }
 
+Quaternion MatrixMath::MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
+
+	// 回転軸を正規化
+	Vector3 normalizedAxis = Normalize(axis);
+	float halfAngle = angle * 0.5f;
+	float sinHalf = sinf(halfAngle);
+
+	Quaternion q;
+	q.x = normalizedAxis.x * sinHalf;
+	q.y = normalizedAxis.y * sinHalf;
+	q.z = normalizedAxis.z * sinHalf;
+	q.w = cosf(halfAngle);
+
+	return q;
+
+}
+
+Vector3 MatrixMath::RotateVector(const Vector3& vector, const Quaternion& quaternion) {
+	// ベクトルをQuaternion表現に変換（虚部xyz、実部0）
+	Quaternion qv = { vector.x, vector.y, vector.z, 0.0f };
+
+	// Quaternionの共役を求める（逆回転に対応）
+	Quaternion qConj = Conjugate(quaternion);
+
+	// 回転公式: v' = q * v * q^-1（ただしq^-1 = qの共役 / |q|^2）
+	// ※Normalizeされている前提なら q^-1 = qConj でOK
+	Quaternion result = Multiply(Multiply(quaternion, qv), qConj);
+
+	// 結果のQuaternionのxyz成分が回転後ベクトル
+	return { result.x, result.y, result.z };
+}
+
+Matrix4x4 MatrixMath::MakeRotateMatrix(const Quaternion& quaternion) {
+	Matrix4x4 result = {};
+
+	// クォータニオンの成分を展開
+	float xx = quaternion.x * quaternion.x;
+	float yy = quaternion.y * quaternion.y;
+	float zz = quaternion.z * quaternion.z;
+	float xy = quaternion.x * quaternion.y;
+	float xz = quaternion.x * quaternion.z;
+	float yz = quaternion.y * quaternion.z;
+	float wx = quaternion.w * quaternion.x;
+	float wy = quaternion.w * quaternion.y;
+	float wz = quaternion.w * quaternion.z;
+
+	// 回転行列の各要素を計算
+	result.m[0][0] = 1.0f - 2.0f * (yy + zz);
+	result.m[0][1] = 2.0f * (xy + wz);
+	result.m[0][2] = 2.0f * (xz - wy);
+	result.m[0][3] = 0.0f;
+
+	result.m[1][0] = 2.0f * (xy - wz);
+	result.m[1][1] = 1.0f - 2.0f * (xx + zz);
+	result.m[1][2] = 2.0f * (yz + wx);
+	result.m[1][3] = 0.0f;
+
+	result.m[2][0] = 2.0f * (xz + wy);
+	result.m[2][1] = 2.0f * (yz - wx);
+	result.m[2][2] = 1.0f - 2.0f * (xx + yy);
+	result.m[2][3] = 0.0f;
+
+	result.m[3][0] = 0.0f;
+	result.m[3][1] = 0.0f;
+	result.m[3][2] = 0.0f;
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
+

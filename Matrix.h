@@ -71,4 +71,16 @@ namespace MatrixMath {
 
 	//逆Quaternionを返す
 	Quaternion Inverse(const Quaternion& quaternion);
+
+	//任意軸回転Quaternionを表すQuaternionの生成
+    Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
+
+	//ベクトルをQuaternionで回転させた結果のベクトルを求める
+    Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
+
+	//Quaternionから回転行列を生成する
+    Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+
+
+
 };
