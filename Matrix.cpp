@@ -501,34 +501,27 @@ Matrix4x4 MatrixMath::MakeRotateAxisMatrix(const Vector3& axis, float angle) {
 
 //方向回転
 Matrix4x4 MatrixMath::DirectionToDirection(const Vector3& from, const Vector3& to) {
-	// 正規化
 	Vector3 f = Normalize(from);
 	Vector3 t = Normalize(to);
 
-	float cosTheta = Dot(f, t);
-
-	// 同じ方向（角度0°）
-	if (cosTheta > 0.9999f) {
+	// 両方同じ向きなら単位行列
+	if (fabs(Dot(f, t) - 1.0f) < 1e-6f) {
 		return MakeIdentity4x4();
 	}
 
-	// 逆方向（180°回転）
-	if (cosTheta < -0.9999f) {
-		// from と垂直なベクトルを適当に作る
-		Vector3 axis = Cross(f, Vector3{ 1.0f, 0.0f, 0.0f });
-		if (Length(axis) < 0.0001f) {
-			axis = Cross(f, Vector3{ 0.0f, 1.0f, 0.0f });
-		}
-		axis = Normalize(axis);
-		return MakeRotateAxisMatrix(axis, std::numbers::pi_v<float>);
+	// 正反対なら、垂直な軸で180度回転
+	if (fabs(Dot(f, t) + 1.0f) < 1e-6f) {
+		Vector3 axis = Normalize(Perpendicular(f));
+		return MakeRotateAxisMatrix(axis, pi);
 	}
 
-	// 回転軸 = f × t
+	// 回転軸（外積）
 	Vector3 axis = Normalize(Cross(f, t));
-	// 角度 = arccos(f・t)
-	float angle = std::acos(std::clamp(cosTheta, -1.0f, 1.0f));
 
-	// 任意軸回転行列を生成
+	// 回転角
+	float angle = std::acos(std::clamp(Dot(f, t), -1.0f, 1.0f));
+
+	// Rodriguesの回転公式で回転行列を作る
 	return MakeRotateAxisMatrix(axis, angle);
 }
 
