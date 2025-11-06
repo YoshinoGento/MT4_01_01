@@ -466,36 +466,34 @@ void MatrixMath::DrawSegment(const Segment& segment, const Matrix4x4& viewProjec
 
 Matrix4x4 MatrixMath::MakeRotateAxisMatrix(const Vector3& axis, float angle) {
 	Vector3 n = Normalize(axis); // 念のため正規化
-	float x = n.x;
-	float y = n.y;
-	float z = n.z;
-	float c = cosf(angle);
-	float s = sinf(angle);
-	float t = 1.0f - c;
+    float c = cosf(angle);
+    float s = sinf(angle);
+    float ic = 1.0f - c;
 
-	Matrix4x4 result = {};
+    Matrix4x4 m{};
 
-	result.m[0][0] = t * x * x + c;
-	result.m[0][1] = t * x * y + s * z;
-	result.m[0][2] = t * x * z - s * y;
-	result.m[0][3] = 0.0f;
+    // Rodriguesの回転公式（行ベース）
+    m.m[0][0] = n.x * n.x * ic + c;
+    m.m[0][1] = n.x * n.y * ic + n.z * s;
+    m.m[0][2] = n.x * n.z * ic - n.y * s;
+    m.m[0][3] = 0.0f;
 
-	result.m[1][0] = t * x * y - s * z;
-	result.m[1][1] = t * y * y + c;
-	result.m[1][2] = t * y * z + s * x;
-	result.m[1][3] = 0.0f;
+    m.m[1][0] = n.y * n.x * ic - n.z * s;
+    m.m[1][1] = n.y * n.y * ic + c;
+    m.m[1][2] = n.y * n.z * ic + n.x * s;
+    m.m[1][3] = 0.0f;
 
-	result.m[2][0] = t * x * z + s * y;
-	result.m[2][1] = t * y * z - s * x;
-	result.m[2][2] = t * z * z + c;
-	result.m[2][3] = 0.0f;
+    m.m[2][0] = n.z * n.x * ic + n.y * s;
+    m.m[2][1] = n.z * n.y * ic - n.x * s;
+    m.m[2][2] = n.z * n.z * ic + c;
+    m.m[2][3] = 0.0f;
 
-	result.m[3][0] = 0.0f;
-	result.m[3][1] = 0.0f;
-	result.m[3][2] = 0.0f;
-	result.m[3][3] = 1.0f;
+    m.m[3][0] = 0.0f;
+    m.m[3][1] = 0.0f;
+    m.m[3][2] = 0.0f;
+    m.m[3][3] = 1.0f;
 
-	return result;
+    return m;
 }
 
 
